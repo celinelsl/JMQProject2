@@ -5,15 +5,14 @@ using UnityEngine;
 public class PlayerAttack : MonoBehaviour
 {
     private Camera fpsCamera;
+    public Transform gunPoint;
 
-    public GameObject gunPoint;
     public GameObject bullet;
-    private float speed;
+    public float speed;
 
-    private Vector3 rayOrigin;
     private void Start()
     {
-        fpsCamera = GetComponentInParent<Camera>();
+        fpsCamera = GetComponentInChildren<Camera>();
     }
     private void Update()
     {
@@ -24,18 +23,26 @@ public class PlayerAttack : MonoBehaviour
     }
     private void Shoot()
     {
-        GameObject instance = Instantiate(bullet, gunPoint.transform.position, bullet.transform.rotation);
-        instance.GetComponent<Rigidbody>().velocity = transform.TransformDirection(Vector3.forward * speed);
+        Ray ray = fpsCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0)); //a ray through the middle of the screen
+        RaycastHit hit;
 
+        Vector3 targetPoint;
+        if (Physics.Raycast(ray, out hit))
+        {
+            targetPoint = hit.point;
+        }
+        else
+        {
+            targetPoint = ray.GetPoint(75); //a point far away from the player
+        }
 
-        //rayOrigin = fpsCamera.ViewportToWorldPoint(new Vector3(0.5f, 0.5f, 0)); //center of camera viewport aka center of screen
-        //RaycastHit hit;
-        //if (Physics.Raycast(rayOrigin,fpsCamera.transform.forward, out hit)) //no range means no limit to how far bullet can shoot
-        //{
-        //    GameObject instance = Instantiate(bullet,gunPoint.transform.position, gunPoint.transform.rotation);
-        //    instance.GetComponent<Rigidbody>().velocity = transform.TransformDirection(new Vector3(0, 0, speed));
+        //calculate direction
+        Vector3 direction = targetPoint - gunPoint.position;
 
-        //} 
+        //instantiate bullet
+        GameObject instance = Instantiate(bullet, gunPoint.position, Quaternion.identity);
+        instance.transform.forward = direction.normalized;
+        instance.GetComponent<Rigidbody>().AddForce(direction.normalized * speed, ForceMode.Impulse);
 
     }
 
